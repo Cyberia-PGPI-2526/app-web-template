@@ -1,9 +1,10 @@
 import axios from "axios"
+import { BACK_URL } from "../config/env"
 import { useAuthStore } from "../store/authStore"
 import { refreshToken } from "./auth.service"
 
 export const api = axios.create({
-    baseURL: 'http://localhost:3000/api/v1',
+    baseURL: `${BACK_URL}/api/v1`,
     withCredentials: true,
 })
 
@@ -26,9 +27,7 @@ api.interceptors.response.use(
 
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true
-      console.log("refresco automático")
-      await refreshToken() 
-      console.log("Se ha refrescado el token")
+      await refreshToken()
       return api(originalRequest)
     }
     return Promise.reject(error)

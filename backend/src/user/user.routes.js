@@ -1,12 +1,10 @@
 import { Router } from "express"
-import { deleteUser, getProfile, getUsers, updateUser, getUser } from "./user.controller.js"
+import { deleteUser, getProfile, getUsers, updateUser, getUser, editProfile } from "./user.controller.js"
 import { requiresAuth, checkRole } from "../auth/auth.middleware.js"
 import { handleValidation } from "../utils/handleValidation.js"
 import { updateUserValidation } from "./user.validation.js"
 
 export const userRoutes = Router()
-
-
 
 userRoutes.get("/", 
     requiresAuth,
@@ -33,3 +31,9 @@ userRoutes.delete("/:id",
 userRoutes.get("/me/profile", 
     requiresAuth,
     getProfile)
+
+userRoutes.put("/me/profile", 
+    requiresAuth,
+    updateUserValidation,
+    handleValidation,
+    editProfile)

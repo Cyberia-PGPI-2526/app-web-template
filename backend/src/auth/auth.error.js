@@ -7,7 +7,6 @@ export default function handleJwtError(error, res) {
     case "NotBeforeError":
       return res.status(403).json({ message: "Inactiva token", code: "TOKEN_NOT_ACTIVE" })
     default:
-      console.error(error)
       return res.status(500).json({ message: "Server error", code: "AUTH_ERROR" })
   }
 }

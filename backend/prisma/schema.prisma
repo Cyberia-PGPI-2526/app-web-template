@@ -7,13 +7,16 @@ datasource db {
   url      = "file:./dev.db"
 }
 
-model User {  
-  id            Int     @id @default(autoincrement())  
-  name          String  
-  email         String  @unique  
+model User {
+  id            Int           @id @default(autoincrement())
+  name          String
+  email         String        @unique
   password      String
+  phone_number  String?
   role          Role
   refreshTokens RefreshToken?
+  appointments  Appointment[] @relation("ClientAppointments")
+  orders        Order[]
 }
 
 model RefreshToken {
@@ -23,10 +26,107 @@ model RefreshToken {
   expiresAt DateTime
   user      User     @relation(fields: [userId], references: [id])
   userId    Int      @unique
-  
 }
 
 enum Role {
   ADMIN
   CUSTOMER
+}
+
+model Service {
+  id           Int           @id @default(autoincrement())
+  name         String        @unique
+  description  String?
+  disabled     Boolean       @default(false)
+  appointments Appointment[]
+}
+
+enum SessionType {
+  MIN_40
+  MIN_60
+  MIN_90
+  PREMIUM_60
+  DOMICILIO_60
+  PACK_3x40
+}
+
+model Availability {
+  id         Int      @id @default(autoincrement())
+  week_day   WeekDay
+  start_time DateTime
+  end_time   DateTime
+
+  @@unique([week_day])
+}
+
+enum WeekDay {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+model Appointment {
+  id               Int              @id @default(autoincrement())
+  appointment_date DateTime
+  start_time       DateTime
+  end_time         DateTime
+  session_type     SessionType      @default(MIN_60)
+  state            AppointmentState @default(PENDING)
+
+  client   User @relation("ClientAppointments", fields: [clientId], references: [id])
+  clientId Int
+
+  service   Service @relation(fields: [serviceId], references: [id])
+  serviceId Int
+
+  @@unique([appointment_date, start_time, clientId])
+}
+
+model BlockedSlot {
+  id         Int       @id @default(autoincrement())
+  date       DateTime // Fecha del día bloqueado
+  start_time DateTime? // Hora de inicio del bloqueo
+  end_time   DateTime? // Hora de fin del bloqueo
+  reason     String? // (opcional) descripción del motivo
+  full_day   Boolean   @default(false) // Si true, bloquea todo el día
+  createdAt  DateTime  @default(now())
+}
+
+enum AppointmentState {
+  PENDING
+  CONFIRMED
+  CANCELED
+  COMPLETED
+  NOT_ASSISTED
+}
+
+model Product {
+  id       Int           @id @default(autoincrement())
+  name     String        @unique
+
+  orderProducts OrderProduct[]
+}
+
+model Order {
+  id         Int          @id @default(autoincrement())
+  order_date DateTime     @default(now())
+  user       User         @relation(fields: [userId], references: [id])
+  userId     Int
+  
+  orderProducts     OrderProduct[]
+}
+
+model OrderProduct {
+  id        Int     @id @default(autoincrement())
+  quantity  Int
+
+  orderId   Int
+  productId Int
+
+  order     Order   @relation(fields: [orderId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
 }

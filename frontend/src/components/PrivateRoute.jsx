@@ -22,7 +22,6 @@ export default function PrivateRoute({ children }) {
                     setIsValid(false)
                 }
             } catch (error) {
-                console.error(error)
                 setIsValid(false)
             }
         }

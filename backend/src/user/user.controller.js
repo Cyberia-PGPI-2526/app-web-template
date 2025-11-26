@@ -1,4 +1,5 @@
 import { prisma } from "../config/db.js"
+import bcrypt from "bcrypt"
 
 export async function getProfile(req, res) {
   try {
@@ -17,7 +18,59 @@ export async function getProfile(req, res) {
 
     return res.json(user)
   } catch (error) {
-    console.error(error)
+    return res.status(500).json({ message: "Server error" })
+  }
+}
+
+export async function editProfile(req, res) {
+  try {
+    const userId = req.user.userId
+    const { name, email, password, phoneNumber } = req.body
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    })
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" })
+    }
+
+    const dataToUpdate = {
+      name: user.name
+    }
+
+    if (name && name.trim() !== user.name) {
+      dataToUpdate.name = name.trim()
+    }
+
+    if (email && email.trim() !== user.email) {
+      const existingEmail = await prisma.user.findUnique({
+        where: { email: email.trim() },
+      })
+
+      if (existingEmail) {
+        return res.status(400).json({ message: "Email already in use" })
+      }
+
+      dataToUpdate.email = email.trim()
+    }
+
+    if (phoneNumber && phoneNumber.trim() !== user.phone_number) {
+      dataToUpdate.phone_number = phoneNumber.trim()
+    }
+
+    if (password && password.trim() !== "") {
+      const hashedPassword = await bcrypt.hash(password, 10)
+      dataToUpdate.password = hashedPassword
+    }
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: dataToUpdate,
+    })
+
+    return res.json({ message: "Profile updated successfully" })
+  } catch (error) {
     return res.status(500).json({ message: "Server error" })
   }
 }
@@ -47,7 +100,6 @@ export async function getUsers(req, res) {
       users
     })
   } catch (error) {
-    console.error(error)
     return res.status(500).json({ message: "Server error" })
   }
 }
@@ -56,14 +108,13 @@ export async function getUser(req, res) {
   try {
     const userId = req.params.id
 
-    console.log(userId)
-
     const user = await prisma.user.findUnique({
       where: { id: parseInt(userId) },
       select: {
         id: true,
         name: true,
         email: true,
+        phone_number: true,
         role: true
       }
     })
@@ -72,59 +123,61 @@ export async function getUser(req, res) {
 
     return res.json(user)
   } catch (error) {
-    console.error(error)
     return res.status(500).json({ message: "Server error" })
   }
 }
 
 export async function updateUser(req, res) {
   try {
-
-    console.log("entrando al update")
-
-    const userId = req.params.id
-    const { name, email, password, role } = req.body
+    const userId = parseInt(req.params.id)
+    const { name, email, phoneNumber, password, role } = req.body
 
     const user = await prisma.user.findUnique({
-      where: { id: parseInt(userId) }
+      where: { id: userId }
     })
 
     if (!user) return res.status(404).json({ message: "User not found" })
 
     const dataToUpdate = {
-      name,
-      role
+      name: user.name
+    }
+
+    if (name && name.trim() !== user.name) {
+      dataToUpdate.name = name.trim()
+    }
+
+    if (role && role !== user.role) {
+      dataToUpdate.role = role
     }
 
     if (email && email.trim() !== user.email) {
-
       const existingEmail = await prisma.user.findUnique({
-        where: {
-          email
-        }
+        where: { email: email.trim() }
       })
 
-      if(existingEmail) return res.status(400).json({ message: "Email in use" })
+      if (existingEmail) {
+        return res.status(400).json({ message: "Email in use" })
+      }
 
       dataToUpdate.email = email.trim()
     }
 
-    if (password) {
+    if (phoneNumber && phoneNumber.trim() !== user.phone_number) {
+      dataToUpdate.phone_number = phoneNumber.trim()
+    }
+
+    if (password && password.trim() !== "") {
       const hashedPassword = await bcrypt.hash(password, 10)
       dataToUpdate.password = hashedPassword
     }
 
-    console.log(user)
-    console.log(dataToUpdate)
-
     await prisma.user.update({
-      where: { id: user.id },
+      where: { id: userId },
       data: dataToUpdate
     })
 
     return res.json({ message: "Updated successfully" })
   } catch (error) {
-    console.error(error)
     return res.status(500).json({ message: "Server error" })
   }
 }
@@ -133,9 +186,17 @@ export async function deleteUser(req, res) {
   try {
     const userId = req.params.id
 
-    if(parseInt(userId) === req.user.userId) return res.status(400).json({ message: "Can't delete" })
+    const existingAppointments = await prisma.appointment.findMany({
+      where: { clientId: parseInt(userId) }
+    });
 
-    await prisma.refreshToken.delete({
+    if (existingAppointments.length > 0) {
+      return res.status(400).json({ message: "User has associated appointments" });
+    }
+
+    if (parseInt(userId) === req.user.userId) return res.status(400).json({ message: "Can't delete" })
+
+    await prisma.refreshToken.deleteMany({
       where: { userId: parseInt(userId) }
     })
 
@@ -145,7 +206,6 @@ export async function deleteUser(req, res) {
 
     return res.json({ message: "Deleted succesfully" })
   } catch (error) {
-    console.error(error)
     return res.status(500).json({ message: "Server error" })
   }
 }

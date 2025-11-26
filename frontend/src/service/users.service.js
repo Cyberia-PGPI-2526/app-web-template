@@ -5,7 +5,14 @@ export const getUserProfile = async () => {
         const response = await api.get('/users/me/profile')
         return response.data
     } catch (error) {
-        console.error(error)
+    }
+}
+
+export const editProfile = async (data) => {
+    try {
+        const response = await api.put('/users/me/profile', data)
+        return response.data
+    } catch (error) {
     }
 }
 
@@ -14,7 +21,6 @@ export const getUsers = async (page) => {
         const response = await api.get(`/users?page=${page}`)
         return response.data
     } catch (error) {
-        console.error(error)
     }
 }
 
@@ -23,18 +29,14 @@ export const getUser = async (id) => {
         const response = await api.get(`/users/${id}`)
         return response.data
     } catch (error) {
-        console.error(error)
     }
 }
 
 export const updateUser = async (id, data) => {
     try {
-        console.log(data)
         const response = await api.put(`/users/${id}`, data)
-        console.log(response)
         return response.data
     } catch (error) {
-        console.error(error)
         if (error.response) {
             const status = error.response.status
             const data = error.response.data
@@ -54,12 +56,10 @@ export const updateUser = async (id, data) => {
 export const deleteUser = async (id) => {
     try {
         const response = await api.delete(`/users/${id}`)
-        console.log(response)
         return response.data
     } catch (error) {
         if(error.response.status === 400) {
-            return { error: true }
+            return { error: true, message: error.response.data.message }
         }
-        console.error(error)
     }
 }

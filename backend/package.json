@@ -5,29 +5,31 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
+    "start": "node src/index.js",
     "dev": "node --watch src/index.js",
     "migrate:dev": "npx prisma migrate dev --name auto",
     "migrate:deploy": "npx prisma migrate dev",
     "generate": "npx prisma generate",
-    "seed": "node prisma/seed.js",
-    "start:pm2": "pm2 start src/index.js -i 8 --name backend"
+    "seed": "node prisma/seed.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@prisma/client": "^6.17.1",
+    "@prisma/client": "^6.18.0",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
+    "date-fns": "^4.1.0",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "express-validator": "^7.3.0",
     "helmet": "^8.1.0",
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "openai": "^6.9.0"
   },
   "devDependencies": {
     "artillery": "^2.0.26",
-    "prisma": "^6.17.1"
+    "prisma": "^6.18.0"
   }
 }
